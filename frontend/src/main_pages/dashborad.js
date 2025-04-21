@@ -134,7 +134,8 @@ export default function Dashboard(){
             </div>
 
             <div className="realtime-chart">
-                <DataChart />
+                {/* <DataChart fieldsToFetch={['temp', 'hum']} /> */}
+                <DataChart fieldsToFetch={['temp', 'hum', 'lint']} />
             </div>
 
             <div className="button-control">
