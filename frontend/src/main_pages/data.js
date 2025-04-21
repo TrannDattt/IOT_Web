@@ -77,15 +77,15 @@ export default function Data(){
     }
 
     const HandleValueChange = (e) => {
-        var value = e.target.value.trim()
-        setSearchValue(value)
+        const value = e.target.value.trim();
+        setSearchValue(value);
     }
 
     useEffect(() => {
-        tableRef.current.setPage(0); 
+        console.log(searchValue, searchCategory)
         tableRef.current.updateTable({ category: searchCategory, value: searchValue });
         tableRef.current.getPageCount({ category: searchCategory, value: searchValue });
-    }, [searchValue, searchCategory])
+    }, [searchValue, searchCategory]);
 
     return(
         <CensorDataLaout>
@@ -109,7 +109,13 @@ export default function Data(){
 
             </div>
             
-            <DataTable ref={tableRef} dataType={dataType} columns={dataColumns} />
+            <DataTable
+                ref={tableRef}
+                dataType={dataType}
+                columns={dataColumns}
+                searchValue={searchValue}
+                searchCategory={searchCategory}
+            />
 
         </CensorDataLaout>
     );

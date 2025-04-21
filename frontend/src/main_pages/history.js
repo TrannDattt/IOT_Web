@@ -69,7 +69,6 @@ export default function History(){
     }
 
     useEffect(() => {
-        tableRef.current.setPage(0)
         tableRef.current.updateTable({value: searchValue})
         tableRef.current.getPageCount({ value: searchValue })
     }, [searchValue])
@@ -87,7 +86,12 @@ export default function History(){
 
             </div>
 
-            <DataTable ref={tableRef} dataType={dataType} columns={actionColumns} />
+            <DataTable 
+                ref={tableRef} 
+                dataType={dataType} 
+                columns={actionColumns} 
+                searchValue={searchValue}
+                searchCategory={'time'}/>
 
         </HistoryLaout>
     );

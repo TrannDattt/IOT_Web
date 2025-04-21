@@ -1,4 +1,4 @@
-import React, {useRef, useState, useEffect, forwardRef, useImperativeHandle} from 'react'
+import React, {useRef, useState, useEffect, forwardRef, useImperativeHandle, useCallback} from 'react'
 import ReactPaginate from 'react-paginate'
 import styled from 'styled-components'
 import { FaAngleDown, FaAngleUp } from "react-icons/fa"
@@ -120,32 +120,25 @@ const TableLayout = styled.div({
     },
 });
 
-const DataTable = forwardRef(({dataType, columns}, ref) => {
-    const curPageSize = useRef(6)
-    const [pageSize, setPageSize] = useState(curPageSize.current)
-    
-    const [curPage, setCurPage] = useState(0)
-    
-    const [curOrderCat, setOrderCat] = useState('time')
-    const [curOrder, setCurOrder] = useState('desc')
-    
-    const [selectedData, setSelectedData] = useState([])
-    const [searchValue, setSearchValue] = useState('')
-    const [pageCount, setPageCount] = useState(1)
-
+const DataTable = forwardRef(({ dataType, columns, searchValue, searchCategory }, ref) => {
+    const curPageSize = useRef(6);
+    const [pageSize, setPageSize] = useState(curPageSize.current);
+    const [curPage, setCurPage] = useState(0);
+    const [curOrderCat, setOrderCat] = useState('time');
+    const [curOrder, setCurOrder] = useState('desc');
+    const [selectedData, setSelectedData] = useState([]);
+    const [pageCount, setPageCount] = useState(1);
     const [isLoading, setIsLoading] = useState(false);
 
-    const UpdateTableData = async ({
-        category = 'time',
+    const UpdateTableData = useCallback(async ({
+        category = searchCategory,
         value = searchValue,
         order = curOrder,
         orderCat = curOrderCat,
         page = curPage,
         pageSize = curPageSize.current,
     } = {}) => {
-        setIsLoading(true); // Set loading state
-        console.log(value);
-        // TODO: Value get reset when change page
+        setIsLoading(true);
         try {
             let response;
             if (dataType === 'censor-data') {
@@ -162,13 +155,11 @@ const DataTable = forwardRef(({dataType, columns}, ref) => {
         } catch (error) {
             console.log(error);
         } finally {
-            setIsLoading(false); // Reset loading state
+            setIsLoading(false);
         }
-    }
+    }, [dataType, searchValue, searchCategory, curOrder, curOrderCat, curPage]);
 
-    const GetPageCount = async ({ category = 'time', value = '' } = {}) => {
-        setSearchValue(value)
-
+    const GetPageCount = useCallback(async ({ category = searchCategory, value = searchValue } = {}) => {
         try {
             let response;
             if (dataType === 'censor-data') {
@@ -180,49 +171,56 @@ const DataTable = forwardRef(({dataType, columns}, ref) => {
                     params: { value },
                 });
             }
-
             const dataCount = response.data.count.data_count;
             const newPageCount = Math.ceil(parseInt(dataCount) / pageSize);
             setPageCount(newPageCount);
+            UpdateCurPage(0); 
         } catch (error) {
             console.log('Error fetching page count:', error);
         }
-    }
-    
+    }, [dataType, pageSize, searchValue, searchCategory]);
+
     useEffect(() => {
-        UpdateTableData()
-        GetPageCount()
-    }, [curPage, curPageSize.current, curOrder, curOrderCat])
-                                
+        UpdateTableData();
+    }, [curOrder, curOrderCat, pageSize, searchValue, searchCategory, UpdateTableData]);
+
+    useEffect(() => {
+        GetPageCount();
+    }, [curOrder, curOrderCat, pageSize, searchValue, searchCategory, GetPageCount]);
+
     const HandleSort = (category) => {
-        const isAsc = curOrderCat === category.accessor && curOrder === "asc"
-        const newOrder = isAsc ? 'desc' : 'asc'
-        setCurOrder(newOrder)
-        setOrderCat(category.accessor)
-        setCurPage(0)
-    }
+        const isAsc = curOrderCat === category.accessor && curOrder === "asc";
+        const newOrder = isAsc ? 'desc' : 'asc';
+        setCurOrder(newOrder);
+        setOrderCat(category.accessor);
+        UpdateCurPage(0); 
+    };
 
     const HandlePageClick = (e) => {
-        setCurPage(e.selected)
-    }
+        UpdateCurPage(e.selected);
+        UpdateTableData({ page: e.selected });
+    };
 
     const HandlePageSizeChange = (e) => {
         const newPageSize = parseInt(e.target.value) || 1;
+        UpdatePageSize(newPageSize);
+        UpdateCurPage(0); 
+        UpdateTableData({ pageSize: newPageSize }); 
+    };
+
+    const UpdatePageSize = (newPageSize) => {
         curPageSize.current = newPageSize;
         setPageSize(newPageSize);
-        setCurPage(0); // Reset to the first page
-        UpdateTableData({ pageSize: newPageSize }); // Reload data with new page size
-    }
+    };
 
-    const SetPage = (page) => {
-        setCurPage(page)
-    }
+    const UpdateCurPage = (newPage) => {
+        setCurPage(newPage);
+    };
 
     useImperativeHandle(ref, () => ({
         updateTable: UpdateTableData,
         getPageCount: GetPageCount,
-        setPage: SetPage
-    }))
+    }));
 
     return (
         <TableLayout>
@@ -292,7 +290,7 @@ const DataTable = forwardRef(({dataType, columns}, ref) => {
                 </button>
             </div>
         </TableLayout>
-    )
-})
+    );
+});
 
-export default DataTable
+export default DataTable;

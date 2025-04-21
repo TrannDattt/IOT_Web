@@ -88,7 +88,7 @@ router.get('/count-selected-data', async (req, res) => {
 
     try {
         const [count] = await db.query(`SELECT COUNT(*) AS data_count 
-            FROM censor_data WHERE '${category}' LIKE '${value}%'`
+            FROM censor_data WHERE ${category} LIKE '${value}%'`
         )
 
         return res.json({message: `Count ${category} ${value} times.`, count: count})
