@@ -277,6 +277,7 @@ const DataTable = forwardRef(({ dataType, columns, searchValue, searchCategory }
                 onPageChange={HandlePageClick}
                 containerClassName={"pagination"}
                 activeClassName={"active"}
+                forcePage={curPage}
             />
 
             <div className="page-controls">

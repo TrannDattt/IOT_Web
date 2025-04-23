@@ -17,10 +17,9 @@ const DashboardLayout = styled.div({
     '& .cur-data':{
         gridColumn: '1 / -1',
         gridRow: '1',
-        rowGap: '50px',
         display: 'grid',
-        gridTemplateColumns: 'repeat(3, 1fr)',
-        columnGap: '50px',
+        gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))',
+        gap: '20px',
     },
 
     '& .realtime-chart':{
@@ -31,6 +30,9 @@ const DashboardLayout = styled.div({
         padding: '20px',
         borderRadius: '10px',
         boxShadow: '0px 2px 5px',
+        display: 'flex',
+        justifyContent: 'center',
+        alignItems: 'center',
 
         '& DataChart': {
             height: '100%',
@@ -75,7 +77,7 @@ const DataBlock = styled.div({
 })
 
 export default function Dashboard(){
-    const [curData, setCurData] = useState({temp: 18, hum: 50, lint: 100})
+    const [curData, setCurData] = useState({})
 
     useEffect(() => {
         GetLatestData(1)
@@ -84,53 +86,51 @@ export default function Dashboard(){
     }, [])
 
     const GetLatestData = async () => {
-        try
-        {
-            const response = await axios.get(`${API_BASE_URL}/censor-data/get-latest`)
-            const { data } = response.data
+        try {
+            const response = await axios.get(`${API_BASE_URL}/censor-data/get-latest`);
+            const { data } = response.data;
 
-            if(data) {
-                const latestData = data[0]
+            if (data && data.length > 0) {
+                const latestData = data[0];
 
-                setCurData({
-                    temp: parseFloat(latestData.temp).toFixed(2),
-                    hum: parseFloat(latestData.hum).toFixed(2),
-                    lint: parseFloat(latestData.lint).toFixed(2)
-                })
+                const updatedData = {};
+                Object.keys(latestData).forEach((key) => {
+                    if (key !== "time" && key !== "id") { // Loại bỏ các trường không cần thiết
+                        updatedData[key] = parseFloat(latestData[key]).toFixed(2);
+                    }
+                });
+
+                setCurData(updatedData);
             }
         } catch (error) {
             console.error("Error fetching latest data: ", error);
         }
-    }
+    };
 
     return(
         <DashboardLayout>
             <div className="cur-data">
-                <DataBlock style={{border: '4px solid rgb(235, 155, 79)'}}>
-                    <h4 className="label">Temperature<FaTemperatureHigh style={{color: 'rgb(235, 155, 79)'}} /></h4>
-                    <p className="data">{curData.temp} C</p>
-                </DataBlock>
+                {Object.keys(curData).map((field, index) => {
+                    // Định nghĩa màu sắc và biểu tượng cho từng trường
+                    const fieldConfig = {
+                        temp: { label: "Temperature", color: "rgb(235, 155, 79)", icon: <FaTemperatureHigh /> },
+                        hum: { label: "Humidity", color: "rgb(73, 158, 198)", icon: <IoIosWater /> },
+                        lint: { label: "Light Intensity", color: "rgb(215, 230, 81)", icon: <FaLightbulb /> },
+                        // lent: { label: "Light Intensity", color: "rgb(215, 230, 81)", icon: <FaLightbulb /> },
+                    };
 
-                <DataBlock style={{border: '4px solid rgb(73, 158, 198)'}}>
-                    <h4 className="label">Humidity<IoIosWater style={{color: 'rgb(73, 158, 198)'}} /></h4>
-                    <p className="data">{curData.hum}%</p>
-                </DataBlock>
+                    const config = fieldConfig[field];
+                    // const config = fieldConfig[field] || { label: field, color: "rgb(150, 150, 150)", icon: null };
 
-                <DataBlock style={{border: '4px solid rgb(215, 230, 81)'}}>
-                    <h4 className="label">Light Intensity<FaLightbulb style={{color: 'rgb(215, 230, 81)'}} /></h4>
-                    <p className="data">{curData.lint} lux</p>
-                </DataBlock>
-
-                {/* <DataBlock style={{border: '4px solid rgb(215, 230, 81)'}}>
-                    <h4 className="label">Dust<FaLightbulb style={{color: 'rgb(26, 27, 109)'}} /></h4>
-                    <p className="data">{curData.lint} %</p>
-                </DataBlock>
-
-                <DataBlock style={{border: '4px solid rgb(215, 230, 81)'}}>
-                    <h4 className="label">Wind Speed<FaLightbulb style={{color: 'rgb(230, 81, 151)'}} /></h4>
-                    <p className="data">{curData.lint} m/s</p>
-                </DataBlock> */}
-
+                    return (
+                        <DataBlock key={index} style={{ border: `4px solid ${config.color}` }}>
+                            <h4 className="label">
+                                {config.label} {config.icon && <span style={{ color: config.color }}>{config.icon}</span>}
+                            </h4>
+                            <p className="data">{curData[field]}</p>
+                        </DataBlock>
+                    );
+                })}
             </div>
 
             <div className="realtime-chart">
